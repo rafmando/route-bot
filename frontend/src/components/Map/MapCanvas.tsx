@@ -4,9 +4,10 @@ import type { Map } from '../../types/map';
 interface Props {
     map: Map;
     route?: string[];
+    vanPosition?: { x: number; y: number } | null;
 }
 
-export function MapCanvas({ map, route = [] }: Props) {
+export function MapCanvas({ map, route = [], vanPosition }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -69,6 +70,19 @@ export function MapCanvas({ map, route = [] }: Props) {
             ctx.fill();
         });
 
+        // Van
+        if (vanPosition) {
+            ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.arc(vanPosition.x, vanPosition.y, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Van outline
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
         // Draw labels
         ctx.fillStyle = 'black';
         ctx.font = '12px Arial';
@@ -82,7 +96,7 @@ export function MapCanvas({ map, route = [] }: Props) {
             ctx.fillText(location.name, location.x, location.y + 25);
         });
 
-    }, [map,route]);
+    }, [map, route, vanPosition]);
 
     return (
         <canvas
