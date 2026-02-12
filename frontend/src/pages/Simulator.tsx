@@ -1,68 +1,48 @@
-import { useRef, useEffect } from 'react';
+import { MapCanvas } from '../components/Map/MapCanvas';
+import { AlgorithmPicker } from '../components/Controls/AlgorithmPicker';
+import { suburbanMap } from '../data/sampleMap';
+import { useState } from 'react';
+import { greedyAlgorithm } from '../engine/algorithms/greedy';
 
 export function Simulator() {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [selectedAlgorithm, setSelectedAlgorithm] = useState('greedy')
+    const [route, setRoute] = useState<string[]>([]);
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+    const handleCalculate = () => {
+        if (selectedAlgorithm === 'greedy') {
+            const calculatedRoute = greedyAlgorithm(suburbanMap);
+            setRoute(calculatedRoute);
+            console.log('Calculated route:', calculatedRoute);
+        }
+    }
 
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        ctx.fillStyle = 'purple';
-        ctx.fillRect(380, 80, 40, 40);
-
-        ctx.fillStyle = 'blue';
-
-        ctx.beginPath();
-        ctx.arc(200, 300, 15, 0, Math.PI * 2);  
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(600, 300, 15, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(400, 500, 15, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = '#888';
-        ctx.lineWidth = 2;
-
-        ctx.beginPath();
-        ctx.moveTo(400, 120);  
-        ctx.lineTo(200, 300);  
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(400, 120);
-        ctx.lineTo(600, 300);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(400, 120);
-        ctx.lineTo(400, 500);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(200, 300); 
-        ctx.lineTo(600, 300);  
-        ctx.stroke();
-    }, []);
 
     return (
-        <div>
-            <h1>Route Optimizer Simulator</h1>
-            <canvas
-                ref={canvasRef}
-                width={800}
-                height={600}
-                style={{
-                    border: '1px solid black', display: 'block',
-                    margin: '0 auto'
-                }}
+        <div style={{ padding: '20px' }}>
+            <h1>Route Optimizer</h1>
+            <AlgorithmPicker
+                selected={selectedAlgorithm}
+                onSelect={setSelectedAlgorithm}
             />
+            <button
+                onClick={handleCalculate}
+                style={{
+                    padding: '10px 20px',
+                    fontSize: '16px',
+                    marginBottom: '20px',
+                    cursor: 'pointer'
+                }}
+            >
+                Calculate Route
+            </button>
+
+            {route.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                    <strong>Route:</strong> {route.join(' → ')}
+                </div>
+            )}
+
+            <MapCanvas map={suburbanMap} route={route} />
         </div>
     );
 }

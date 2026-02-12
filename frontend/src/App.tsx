@@ -1,7 +1,14 @@
-import { Simulator } from './pages/Simulator'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Simulator } from './pages/Simulator';
 
 function App() {
-  return <Simulator/>
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Simulator />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
