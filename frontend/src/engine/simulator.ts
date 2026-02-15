@@ -41,7 +41,7 @@ export class RouteSimulator {
 
             if (!currentLoc || !targetLoc) return;
 
-            this.state.progress += 0.02;
+            this.state.progress += 0.005;
 
             if (this.state.progress >= 1) {
                 this.state.targetIndex++;
