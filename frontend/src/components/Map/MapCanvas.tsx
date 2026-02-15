@@ -58,29 +58,26 @@ export function MapCanvas({ map, route = [], vanPosition }: Props) {
 
 
 
-        // Draw warehouse (red square)
-        ctx.fillStyle = 'red';
-        ctx.fillRect(map.warehouse.x - 15, map.warehouse.y - 15, 30, 30);
 
-        // Draw houses (blue circles)
+        // warehouse
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🏭', map.warehouse.x, map.warehouse.y);
+
+        // houses
         map.locations.forEach(location => {
             ctx.fillStyle = 'blue';
             ctx.beginPath();
             ctx.arc(location.x, location.y, 10, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillText('🏠', location.x, location.y);
         });
 
         // Van
         if (vanPosition) {
-            ctx.fillStyle = 'orange';
             ctx.beginPath();
             ctx.arc(vanPosition.x, vanPosition.y, 12, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Van outline
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            ctx.fillText('🚚', vanPosition.x, vanPosition.y);
         }
 
         // Draw labels
@@ -94,7 +91,10 @@ export function MapCanvas({ map, route = [], vanPosition }: Props) {
         // House labels
         map.locations.forEach(location => {
             ctx.fillText(location.name, location.x, location.y + 25);
+            ctx.fillText(location.id, location.x, location.y + 50)
         });
+
+
 
     }, [map, route, vanPosition]);
 

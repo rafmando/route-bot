@@ -3,6 +3,7 @@ export interface Location {
   x: number;
   y: number;
   name: string;
+  notes: null | string[];
   type: 'warehouse' | 'house';
 }
 
