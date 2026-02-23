@@ -4,6 +4,7 @@ import { AlgorithmPicker } from '../components/Controls/AlgorithmPicker';
 import { suburbanMap } from '../data/sampleMap';
 import { greedyAlgorithm } from '../engine/algorithms/greedy';
 import { RouteSimulator } from '../engine/simulator';
+import { saveRoute } from '../services/api';
 
 export function Simulator() {
     const [selectedAlgorithm, setSelectedAlgorithm] = useState('greedy');
@@ -11,6 +12,21 @@ export function Simulator() {
     const [vanPosition, setVanPosition] = useState<{ x: number; y: number } | null>(null);
     const [stats, setStats] = useState<{ distance: number; time: number }>({ distance: 0, time: 0 });  // ← NEW
     const simulatorRef = useRef<RouteSimulator | null>(null);
+
+    const handleSave = async () => {
+        try {
+            const result = await saveRoute({
+                mapId: suburbanMap.id,
+                algorithm: selectedAlgorithm,
+                totalDistance: stats.distance,
+                path: route
+            });
+            console.log('Route saved:', result);
+            alert(`Route saved!`);
+        } catch (err) {
+            console.log('Save error:', err);
+        }
+    };
 
     const handleCalculate = () => {
         if (selectedAlgorithm === 'greedy') {
@@ -77,6 +93,19 @@ export function Simulator() {
                     }}
                 >
                     Animate
+                </button>
+
+                <button
+                    onClick={handleSave}
+                    disabled={route.length === 0}
+                    style={{
+                        padding: '10px 20px',
+                        fontSize: '16px',
+                        marginRight: '10px',
+                        cursor: route.length === 0 ? 'not-allowed' : 'pointer'
+                    }}
+                >
+                    Save Route
                 </button>
 
                 <button

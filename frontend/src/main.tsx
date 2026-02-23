@@ -14,6 +14,8 @@ Amplify.configure({
   }
 });
 
+console.log('awsConfig', awsConfig);
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

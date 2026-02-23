@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib/core';
 import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as cognito from 'aws-cdk-lib/aws-cognito'
 
@@ -27,19 +28,19 @@ export class BackendStack extends cdk.Stack {
     });
 
     // cognito
-    const userPool = new cognito.UserPool(this,'RouteBot-UserPool',{
+    const userPool = new cognito.UserPool(this, 'RouteBot-UserPool', {
       userPoolName: 'RouteBot-UserPool',
       selfSignUpEnabled: true,
-      signInAliases: {email: true},
-      autoVerify: {email: true},
+      signInAliases: { email: true },
+      autoVerify: { email: true },
       passwordPolicy: {
-        minLength: 8, 
+        minLength: 8,
         requireUppercase: true,
         requireDigits: true,
       }
     })
 
-    const userPoolClient = new cognito.UserPoolClient(this,'RouteBot-UserPoolClient',{
+    const userPoolClient = new cognito.UserPoolClient(this, 'RouteBot-UserPoolClient', {
       userPool,
       authFlows: {
         userPassword: true,
@@ -47,24 +48,29 @@ export class BackendStack extends cdk.Stack {
       }
     })
 
-    new cdk.CfnOutput(this,'UserPoolId',{value: userPool.userPoolId});
-    new cdk.CfnOutput(this,'UserPoolClientId',{value: userPoolClient.userPoolClientId})
-
+    new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
+    new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId })
 
     // lambda functions
-    const routesLambda = new lambda.Function(this, 'RouteBot-RoutesHandler', {
+    const routesLambda = new NodejsFunction(this, 'RouteBot-RoutesHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'routes.handler',
-      code: lambda.Code.fromAsset('lambda'),
+      entry: 'lambda/routes.ts',
+      handler: 'handler',
+      bundling: {
+        forceDockerBundling: false
+      },
       environment: {
         ROUTES_TABLE: routesTable.tableName
       }
     });
 
-    const mapsLambda = new lambda.Function(this, 'RouteBot-MapsHandler', {
+    const mapsLambda = new NodejsFunction(this, 'RouteBot-MapsHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'maps.handler',
-      code: lambda.Code.fromAsset('lambda'),
+      entry: 'lambda/maps.ts',
+      handler: 'handler',
+      bundling: {
+        forceDockerBundling: false
+      },
       environment: {
         MAPS_TABLE: mapTable.tableName
       }
@@ -84,15 +90,15 @@ export class BackendStack extends cdk.Stack {
     });
 
     // protected roots
-     const authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'RouteBot-Authorizer', {
+    const authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'RouteBot-Authorizer', {
       cognitoUserPools: [userPool]
     });
     const routes = api.root.addResource('routes');
-    routes.addMethod('POST', new apigateway.LambdaIntegration(routesLambda),{
+    routes.addMethod('POST', new apigateway.LambdaIntegration(routesLambda), {
       authorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO
     });
-    routes.addMethod('GET', new apigateway.LambdaIntegration(routesLambda),{
+    routes.addMethod('GET', new apigateway.LambdaIntegration(routesLambda), {
       authorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO
     });
@@ -104,4 +110,3 @@ export class BackendStack extends cdk.Stack {
     mapsWithId.addMethod('GET', new apigateway.LambdaIntegration(mapsLambda));
   }
 }
-

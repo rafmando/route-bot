@@ -11,15 +11,23 @@ const corsHeaders = {
 };
 
 export async function handler(event: any): Promise<any> {
-    const method = event.requestContext.http.method;
+    const method = event.httpMethod;
     let result: any;
     const userId = event.queryStringParameters?.userId || 'test-user';
     try {
         if (method === 'POST') {
-            result = await docClient.send(new PutCommand({
+            const userId = event.requestContext.authorizer.claims.sub;
+            const body = JSON.parse(event.body);
+
+            await docClient.send(new PutCommand({
                 TableName: 'RouteBot-Routes',
-                Item: JSON.parse(event.body)
-            }))
+                Item: {
+                    userId,
+                    createdAt: new Date().toISOString(),
+                    ...body
+                }
+            }));
+
             return {
                 statusCode: 201,
                 headers: corsHeaders,
