@@ -3,11 +3,13 @@ import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as cognito from 'aws-cdk-lib/aws-cognito'
 
 export class BackendStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    // dynamo tables
     const usersTable = new dynamodb.TableV2(this, 'RouteBot-UsersTable', {
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING, },
       tableName: 'RouteBot-Users'
@@ -24,6 +26,32 @@ export class BackendStack extends cdk.Stack {
       tableName: 'RouteBot-Maps'
     });
 
+    // cognito
+    const userPool = new cognito.UserPool(this,'RouteBot-UserPool',{
+      userPoolName: 'RouteBot-UserPool',
+      selfSignUpEnabled: true,
+      signInAliases: {email: true},
+      autoVerify: {email: true},
+      passwordPolicy: {
+        minLength: 8, 
+        requireUppercase: true,
+        requireDigits: true,
+      }
+    })
+
+    const userPoolClient = new cognito.UserPoolClient(this,'RouteBot-UserPoolClient',{
+      userPool,
+      authFlows: {
+        userPassword: true,
+        userSrp: true
+      }
+    })
+
+    new cdk.CfnOutput(this,'UserPoolId',{value: userPool.userPoolId});
+    new cdk.CfnOutput(this,'UserPoolClientId',{value: userPoolClient.userPoolClientId})
+
+
+    // lambda functions
     const routesLambda = new lambda.Function(this, 'RouteBot-RoutesHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'routes.handler',
@@ -45,6 +73,7 @@ export class BackendStack extends cdk.Stack {
     routesTable.grantReadWriteData(routesLambda);
     mapTable.grantReadData(mapsLambda);
 
+    // api
     const api = new apigateway.RestApi(this, 'RouteBotApi', {
       restApiName: 'RouteBot API',
       description: 'API for route-bot delivery optimizer',
@@ -54,9 +83,19 @@ export class BackendStack extends cdk.Stack {
       }
     });
 
+    // protected roots
+     const authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'RouteBot-Authorizer', {
+      cognitoUserPools: [userPool]
+    });
     const routes = api.root.addResource('routes');
-    routes.addMethod('POST', new apigateway.LambdaIntegration(routesLambda));
-    routes.addMethod('GET', new apigateway.LambdaIntegration(routesLambda));
+    routes.addMethod('POST', new apigateway.LambdaIntegration(routesLambda),{
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
+    routes.addMethod('GET', new apigateway.LambdaIntegration(routesLambda),{
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO
+    });
 
     const maps = api.root.addResource('maps');
     maps.addMethod('GET', new apigateway.LambdaIntegration(mapsLambda));
