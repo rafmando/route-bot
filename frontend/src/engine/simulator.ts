@@ -105,11 +105,4 @@ export class RouteSimulator {
         );
         return road ? road.distance : 0;
     }
-
-    // Keep the old getDistance for pixel calculations if needed
-    private getDistance(loc1: Location, loc2: Location): number {
-        const dx = loc2.x - loc1.x;
-        const dy = loc2.y - loc1.y;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
 }

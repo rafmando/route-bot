@@ -5,10 +5,53 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as cognito from 'aws-cdk-lib/aws-cognito'
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 
 export class BackendStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    //s3 bucket for frontend 
+    const frontendBucket = new s3.Bucket(this, 'RouteBot-FrontendBucket', {
+      websiteIndexDocument: 'index.html',
+      websiteErrorDocument: 'index.html',
+      publicReadAccess: true,
+      blockPublicAccess: new s3.BlockPublicAccess({
+        blockPublicAcls: false,
+        blockPublicPolicy: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false,
+      }),
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
+
+    // cloudFront distribution
+    const distribution = new cloudfront.Distribution(this, 'RouteBot-Distribution', {
+      defaultBehavior: {
+        origin: new origins.S3StaticWebsiteOrigin(frontendBucket),
+      },
+      defaultRootObject: 'index.html',
+      errorResponses: [{
+        httpStatus: 404,
+        responseHttpStatus: 200,
+        responsePagePath: '/index.html',
+      }],
+    });
+
+    new s3deploy.BucketDeployment(this, 'RouteBot-FrontendDeployment', {
+      sources: [s3deploy.Source.asset('../frontend/dist')],
+      destinationBucket: frontendBucket,
+      distribution,
+      distributionPaths: ['/*'],
+    });
+
+    new cdk.CfnOutput(this, 'FrontendUrl', {
+      value: `https://${distribution.distributionDomainName}`
+    });
 
     // dynamo tables
     const usersTable = new dynamodb.TableV2(this, 'RouteBot-UsersTable', {
