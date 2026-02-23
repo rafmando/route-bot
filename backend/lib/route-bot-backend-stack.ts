@@ -76,8 +76,19 @@ export class BackendStack extends cdk.Stack {
       }
     });
 
+    const leaderboardLambda = new NodejsFunction(this, 'RouteBot-LeaderboardHandler', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      entry: 'lambda/leaderboard.ts',
+      handler: 'handler',
+      bundling: { forceDockerBundling: false },
+      environment: {
+        ROUTES_TABLE: routesTable.tableName
+      }
+    });
+
     routesTable.grantReadWriteData(routesLambda);
     mapTable.grantReadData(mapsLambda);
+    routesTable.grantReadData(leaderboardLambda);
 
     // api
     const api = new apigateway.RestApi(this, 'RouteBotApi', {
@@ -108,5 +119,8 @@ export class BackendStack extends cdk.Stack {
 
     const mapsWithId = maps.addResource('{id}');
     mapsWithId.addMethod('GET', new apigateway.LambdaIntegration(mapsLambda));
+
+    const leaderboard = api.root.addResource('leaderboard');
+    leaderboard.addMethod('GET', new apigateway.LambdaIntegration(leaderboardLambda));
   }
 }

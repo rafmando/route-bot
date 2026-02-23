@@ -4,22 +4,26 @@ import { AlgorithmPicker } from '../components/Controls/AlgorithmPicker';
 import { suburbanMap } from '../data/sampleMap';
 import { greedyAlgorithm } from '../engine/algorithms/greedy';
 import { RouteSimulator } from '../engine/simulator';
+import { Leaderboard } from '../components/Stats/Leaderboard';
 import { saveRoute } from '../services/api';
+import { getCurrentUser } from 'aws-amplify/auth';
 
 export function Simulator() {
     const [selectedAlgorithm, setSelectedAlgorithm] = useState('greedy');
     const [route, setRoute] = useState<string[]>([]);
     const [vanPosition, setVanPosition] = useState<{ x: number; y: number } | null>(null);
-    const [stats, setStats] = useState<{ distance: number; time: number }>({ distance: 0, time: 0 });  // ← NEW
+    const [stats, setStats] = useState<{ distance: number; time: number }>({ distance: 0, time: 0 });
     const simulatorRef = useRef<RouteSimulator | null>(null);
 
     const handleSave = async () => {
         try {
+            const { signInDetails } = await getCurrentUser();
             const result = await saveRoute({
                 mapId: suburbanMap.id,
                 algorithm: selectedAlgorithm,
                 totalDistance: stats.distance,
-                path: route
+                path: route,
+                userEmail: signInDetails?.loginId
             });
             console.log('Route saved:', result);
             alert(`Route saved!`);
@@ -32,7 +36,6 @@ export function Simulator() {
         if (selectedAlgorithm === 'greedy') {
             const calculatedRoute = greedyAlgorithm(suburbanMap);
             setRoute(calculatedRoute);
-            console.log('Calculated route:', calculatedRoute);
         }
     };
 
@@ -48,7 +51,7 @@ export function Simulator() {
 
         simulator.start((position, statsUpdate) => {
             setVanPosition(position);
-            setStats(statsUpdate);  // ← NEW
+            setStats(statsUpdate);
         });
     };
 
@@ -57,7 +60,7 @@ export function Simulator() {
             simulatorRef.current.reset();
         }
         setVanPosition(null);
-        setStats({ distance: 0, time: 0 });  // ← NEW
+        setStats({ distance: 0, time: 0 });
     };
 
     return (
@@ -72,12 +75,7 @@ export function Simulator() {
             <div style={{ marginBottom: '20px' }}>
                 <button
                     onClick={handleCalculate}
-                    style={{
-                        padding: '10px 20px',
-                        fontSize: '16px',
-                        marginRight: '10px',
-                        cursor: 'pointer'
-                    }}
+                    style={{ padding: '10px 20px', fontSize: '16px', marginRight: '10px', cursor: 'pointer' }}
                 >
                     Calculate Route
                 </button>
@@ -85,12 +83,7 @@ export function Simulator() {
                 <button
                     onClick={handleAnimate}
                     disabled={route.length === 0}
-                    style={{
-                        padding: '10px 20px',
-                        fontSize: '16px',
-                        marginRight: '10px',
-                        cursor: route.length === 0 ? 'not-allowed' : 'pointer'
-                    }}
+                    style={{ padding: '10px 20px', fontSize: '16px', marginRight: '10px', cursor: route.length === 0 ? 'not-allowed' : 'pointer' }}
                 >
                     Animate
                 </button>
@@ -98,23 +91,14 @@ export function Simulator() {
                 <button
                     onClick={handleSave}
                     disabled={route.length === 0}
-                    style={{
-                        padding: '10px 20px',
-                        fontSize: '16px',
-                        marginRight: '10px',
-                        cursor: route.length === 0 ? 'not-allowed' : 'pointer'
-                    }}
+                    style={{ padding: '10px 20px', fontSize: '16px', marginRight: '10px', cursor: route.length === 0 ? 'not-allowed' : 'pointer' }}
                 >
                     Save Route
                 </button>
 
                 <button
                     onClick={handleReset}
-                    style={{
-                        padding: '10px 20px',
-                        fontSize: '16px',
-                        cursor: 'pointer'
-                    }}
+                    style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer' }}
                 >
                     Reset
                 </button>
@@ -126,7 +110,6 @@ export function Simulator() {
                 </div>
             )}
 
-            {/* NEW: Stats Display */}
             {vanPosition && (
                 <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
                     <div><strong>Distance Traveled:</strong> {stats.distance.toFixed(2)} km</div>
@@ -135,6 +118,7 @@ export function Simulator() {
             )}
 
             <MapCanvas map={suburbanMap} route={route} vanPosition={vanPosition} />
+            <Leaderboard mapId={suburbanMap.id} />
         </div>
     );
 }

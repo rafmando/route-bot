@@ -11,9 +11,10 @@ export async function saveRoute(routeData: {
   algorithm: string;
   totalDistance: number;
   path: string[];
+  userEmail?: string;
 }) {
   const token = await getToken();
-
+  console.log('body being sent:', JSON.stringify(routeData));
   const response = await fetch(`${awsConfig.apiUrl}/routes`, {
     method: 'POST',
     headers: {
@@ -25,5 +26,10 @@ export async function saveRoute(routeData: {
 
   console.log('Fetching:', `${awsConfig.apiUrl}/routes`);
 
+  return response.json();
+}
+
+export async function getLeaderboard(mapId: string) {
+  const response = await fetch(`${awsConfig.apiUrl}/leaderboard?mapId=${mapId}`);
   return response.json();
 }
