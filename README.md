@@ -75,7 +75,7 @@ Simulate real-world delivery scenarios where a driver starts at a warehouse and 
 
 ## 💡 Why I Built This
 
-As a delivery driver, I deal with route optimization daily. When I read about the robot delivery problem in Eloquent JavaScript, it clicked - I was solving this every day. I built route-bot to explore different pathfinding algorithms and see how they compare to real-world delivery strategies.
+When I read about the robot delivery problem in Eloquent JavaScript, it clicked - I was solving this every day. I built route-bot to explore different pathfinding algorithms and see how they compare to real-world delivery strategies.
 
 ---
 
